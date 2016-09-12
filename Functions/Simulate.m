@@ -37,7 +37,6 @@ Velocity = LookUpTable1(:,1);
 Drag = LookUpTable1(:,2);
 MotorE = LookUpTable1(:,6);
 
-
 LookUpTable2 = CarObject.StraightDecTableGenerator(Velocity,Drag);
 
 StraightThrottle = ThrottleCurve(LookUpTable1,dx);
@@ -54,7 +53,6 @@ EntranceV = zeros(S,1);
 ExitV = zeros(S,1);
 
 for i = 1:S
-    
     R = TrackObject.Track(i).Radius;
     
     RArray(i,:) = [R,i];
@@ -98,9 +96,8 @@ for i = 1:S
     end    
 end
 
-
-
 [ EntranceV, ExitV, BP, BPSpeed ] = BrakePointIterator( TrackObject,MaxV,EntranceV,ExitV );
+
 Miscellaneous = {EntranceV,ExitV,BP,BPSpeed};
 Tele = Telemetry(Miscellaneous);
 Tele.LapStitch(TrackObject);
@@ -157,8 +154,7 @@ TL(1) = Table(end,8);
 
 i = 1;
 
-while V 
-    
+while V
     i = i + 1;
     
     a = find(Vel >= V, 1, 'first');
