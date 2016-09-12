@@ -67,9 +67,7 @@ classdef Car < handle
             % Calculate Car Velocity for each Axle RPM value
             Velocity = CarObject.Tire.Radius*AxleRPM*pi/30; % in/s
             % Calculate corresponding drag for each veloicty
-%             Drag     = (0.5*RHO*CarObject.DragCoefficient*CarObject.FrontCrossSection.*Velocity.^2)/12^4; % lbfe
-            vel=Velocity/12;    %Convert to ft/s
-            [~,~,Drag]=CarObject.CalculateAeroEffects(vel);
+            Drag     = (0.5*RHO*CarObject.DragCoefficient*CarObject.FrontCrossSection.*Velocity.^2)/12^4; % lbfe
             
             MaxDrivelineA   = (WheelF - Drag - RollingR)/(CarObject.Keq*CarObject.Weight/(12*32.174)); % in/s^2
             MaxDrivelineGs  = MaxDrivelineA/(12*32.174);
@@ -233,16 +231,12 @@ classdef Car < handle
             
         end
         
-        function [deltaFz,lift,drag] = CalculateAeroEffects(CarObject, Velocity)
+        function [deltaFz] = CalculateAeroEffects(CarObject, Velocity)
             %   Load Distribution Equations from: Solve[{Fz + Rz + Lift == 0, -Fz*frontAxleDistance + Rz*rearAxleDistance - drag*(CoPz - CGz) + lift*(CoPx - CGx) == 0}, {Fz, Rz}]
-            % Velocity-ft/s rho-slug/ft^3 front_area-in^2
-%             lift = (0.5*CarObject.Rho*CarObject.LiftCoefficient*CarObject.FrontCrossSection*Velocity.^2)/12^4; % lbf
-            q=.5.*CarObject.Rho.*Velocity.^2;   %Dynamic Pressure psf
-            S=CarObject.FrontCrossSection/144;  %Convert to ft^2
-            lift=CarObject.LiftCoefficient.*q.*S;   %lbs
-%             drag = (0.5*CarObject.Rho*CarObject.DragCoefficient*CarObject.FrontCrossSection*Velocity.^2)/12^4; % lbf
-            drag=CarObject.DragCoefficient.*q.*S;   %lbs
-
+            
+            lift = (0.5*CarObject.Rho*CarObject.LiftCoefficient*CarObject.FrontCrossSection*Velocity.^2)/12^4; % lbf
+            drag = (0.5*CarObject.Rho*CarObject.DragCoefficient*CarObject.FrontCrossSection*Velocity.^2)/12^4; % lbf
+            
             frontAxleDistance = CarObject.CG(1);
             rearAxleDistance = CarObject.Chassis.Length - CarObject.CG(1);
             
