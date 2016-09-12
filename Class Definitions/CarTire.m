@@ -358,23 +358,19 @@ classdef CarTire < handle
             if strcmp(BrakeThrottle,'Throttle')
                 maxForwardA = interp1(T.ForwardAccelerationMap.velocities, T.ForwardAccelerationMap.accelerations, Velocity ./ 12, 'linear');
                 InsideSqrt = 1-(LateralA./maxLateralAs).^2;
-                
-                if (min(InsideSqrt) < 0)
-                    disp('Problem Found!');
-                end
+                OverMax = InsideSqrt < 0;
                 
                 LongA = maxForwardA.*sqrt(InsideSqrt);
+                LongA(OverMax) = 0.01;
                 I = isnan(LongA);
                 LongA(I) = maxForwardA(I);
             elseif strcmp(BrakeThrottle,'Brake')
                 maxBrakeA = interp1(T.BrakingAccelerationMap.velocities, T.BrakingAccelerationMap.accelerations, Velocity ./ 12, 'linear');
                 InsideSqrt = 1-(LateralA./maxLateralAs).^2;
+                OverMax = InsideSqrt < 0;
                 
-                if (min(InsideSqrt) < 0)
-                    disp('Problem Found! @ 2');
-                end
-                
-                LongA = abs(maxBrakeA.*sqrt(InsideSqrt));
+                LongA = -1 * maxBrakeA.*sqrt(InsideSqrt);
+                LongA(OverMax) = 0.01;
                 I = isnan(LongA);
                 LongA(I) = -1 * maxBrakeA(I);
             end
