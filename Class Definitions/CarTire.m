@@ -124,7 +124,7 @@ classdef CarTire < handle
             Kr_initial = Kr;
             
             Gs = (0:0.01:2)';
-            Velocity = sqrt(Gs * 32.2 * Radius/12);
+            Velocity = sqrt(Gs * 32.2 * 12 * Radius); %in/s
             Fz_aero_delta = CarObject.CalculateAeroEffects(Velocity);
             
             UnbalanceFlag = 1;
@@ -220,7 +220,7 @@ classdef CarTire < handle
         end
         
         function CalculateLongitudinalGMap(T, CarObject)
-            Velocities = 0:10:100;
+            Velocities = 0:100:1800; % 0 - ~100mph
             [ForwardGs, BrakingGs, RegenGs] = arrayfun(@(velocity)(LongitudinalGCalculator(T, CarObject, velocity)), Velocities);
             T.ForwardAccelerationMap = struct('accelerations', ForwardGs, 'velocities', Velocities);
             T.BrakingAccelerationMap = struct('accelerations', BrakingGs, 'velocities', Velocities);
@@ -394,7 +394,7 @@ classdef CarTire < handle
             maxLateralAs = interp1(T.LateralAccelerationMap.radii, T.LateralAccelerationMap.accelerations, radii, 'linear');
             
             if strcmp(BrakeThrottle,'Throttle')
-                maxForwardA = interp1(T.ForwardAccelerationMap.velocities, T.ForwardAccelerationMap.accelerations, Velocity ./ 12, 'linear');
+                maxForwardA = interp1(T.ForwardAccelerationMap.velocities, T.ForwardAccelerationMap.accelerations, Velocity, 'linear');
                 InsideSqrt = 1-(LateralA./maxLateralAs).^2;
                 OverMax = InsideSqrt < 0;
                 
@@ -404,19 +404,21 @@ classdef CarTire < handle
                 LongA(I) = maxForwardA(I);
             elseif strcmp(BrakeThrottle,'Brake')
                 if strcmp(BrakingMode, 'Hydraulic')
-                    maxBrakeA = interp1(T.BrakingAccelerationMap.velocities, T.BrakingAccelerationMap.accelerations, Velocity ./ 12, 'linear');
+                    maxBrakeA = interp1(T.BrakingAccelerationMap.velocities, T.BrakingAccelerationMap.accelerations, Velocity, 'linear');
                 elseif strcmp(BrakingMode, 'Regen')
-                    maxBrakeA = interp1(T.RegenAccelerationMap.velocities, T.RegenAccelerationMap.accelerations, Velocity ./ 12, 'linear');
+                    maxBrakeA = interp1(T.RegenAccelerationMap.velocities, T.RegenAccelerationMap.accelerations, Velocity, 'linear');
                 end
 
                 InsideSqrt = 1-(LateralA./maxLateralAs).^2;
                 OverMax = InsideSqrt < 0;
                 
-                LongA = -1 * maxBrakeA.*sqrt(InsideSqrt);
+                LongA = maxBrakeA.*sqrt(InsideSqrt);
                 LongA(OverMax) = 0.01;
 
                 I = isnan(LongA);
-                LongA(I) = -1 * maxBrakeA(I);
+                LongA(I) = maxBrakeA(I);
+                
+                LongA = abs(LongA);
             end
         end
         
