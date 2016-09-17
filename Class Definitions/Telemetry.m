@@ -366,11 +366,11 @@ classdef Telemetry < handle
             %             ylabel('Speed (mph)')
             %             title('Lap Speeds')
             %
-%                         figure
-%                         hist(Tele.LapData(:,7),100);
-%                         xlabel('Motor Speed (RPM)')
-%                         ylabel('Number of Occurrences')
-%                         title('Motor RPM Histogram')
+            %             figure
+            %             hist(Tele.LapData(:,7),100);
+            %             xlabel('Motor Speed (RPM)')
+            %             ylabel('Number of Occurrences')
+            %             title('Motor RPM Histogram')
             
             for i = 1:S
                 

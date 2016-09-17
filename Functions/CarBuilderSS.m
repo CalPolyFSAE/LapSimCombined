@@ -143,11 +143,7 @@ switch tabName
         RPMincrement = (0:max(RPMS)/length(fuel_map_raw):length(RPMS)-2)'; %RPM's array with fuel step increment
         E = abs(spline(RPMincrement,fuel_map_raw,RPMS)); %fuel_map
         
-        
-          Resistance = 0;
-          NominalVoltage =0;
-        
-        Battery = CarBattery(Capacity,Weight,CG,Resistance,NominalVoltage);
+        Battery = CarBattery(Capacity,Weight,CG);
         
         %Engine Parameters again
 %         P = 14.7; %[Psi] at WOT
