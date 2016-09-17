@@ -83,6 +83,7 @@ classdef CarTire < handle
         function CalculateLateralGMap(T,CarObject,TrackObject)
             TrackCornerRadii = TrackObject.TrackCornerRadii();
             TrackCornerRadii = unique(TrackCornerRadii);
+            TrackCornerRadii(not(TrackCornerRadii)) = []; % Eliminate straights 
             
             % Balance Car at closest to average corner
             averageCornerRadius = mean(TrackCornerRadii);
@@ -129,10 +130,7 @@ classdef CarTire < handle
             UnbalanceFlag = 1;
             
             while true
-            
-                Fz = LateralWeightTransfer( Gs,Ws,Wfus,Wrus,FR,Tf,Tr,Kf,Kr,hCG,hfus,hrus,hfrc,hrrc );
-                
-                Fz = Fz + Fz_aero_delta;
+                Fz = LateralWeightTransfer( Gs,Ws,Wfus,Wrus,FR,Tf,Tr,Kf,Kr,hCG,hfus,hrus,hfrc,hrrc ) + Fz_aero_delta;
                 
                 % Set wheel forces less than zero to zero
                 I = Fz < 0;
@@ -392,21 +390,31 @@ classdef CarTire < handle
             %**************************************************************
             % NONE    
             
-            radii = (Velocity.^2)./LateralA; % Will result in NaN for velocities/Lat A's of zero.
-            maxLateralAs = interp1(T.LateralAccelerationMap.radii, T.LateralAccelerationMap.accelerations, radii, 'spline');
+            radii = ((Velocity ./ 12).^2)./LateralA; % Will result in NaN for velocities/Lat A's of zero.
+            maxLateralAs = interp1(T.LateralAccelerationMap.radii, T.LateralAccelerationMap.accelerations, radii, 'linear');
             
             if strcmp(BrakeThrottle,'Throttle')
-                maxForwardA = interp1(T.ForwardAccelerationMap.velocities, T.ForwardAccelerationMap.accelerations, Velocity, 'spline');
-                LongA = maxForwardA.*sqrt(1-(LateralA./maxLateralAs).^2);
+                maxForwardA = interp1(T.ForwardAccelerationMap.velocities, T.ForwardAccelerationMap.accelerations, Velocity ./ 12, 'linear');
+                InsideSqrt = 1-(LateralA./maxLateralAs).^2;
+                OverMax = InsideSqrt < 0;
+                
+                LongA = maxForwardA.*sqrt(InsideSqrt);
+                LongA(OverMax) = 0.01;
                 I = isnan(LongA);
                 LongA(I) = maxForwardA(I);
             elseif strcmp(BrakeThrottle,'Brake')
                 if strcmp(BrakingMode, 'Hydraulic')
-                    maxBrakeA = interp1(T.BrakingAccelerationMap.velocities, T.BrakingAccelerationMap.accelerations, Velocity, 'spline');
+                    maxBrakeA = interp1(T.BrakingAccelerationMap.velocities, T.BrakingAccelerationMap.accelerations, Velocity ./ 12, 'linear');
                 elseif strcmp(BrakingMode, 'Regen')
-                    maxBrakeA = interp1(T.RegenAccelerationMap.velocities, T.RegenAccelerationMap.accelerations, Velocity, 'spline');
+                    maxBrakeA = interp1(T.RegenAccelerationMap.velocities, T.RegenAccelerationMap.accelerations, Velocity ./ 12, 'linear');
                 end
-                LongA = abs(maxBrakeA.*sqrt(1-(LateralA./maxLateralAs).^2));
+
+                InsideSqrt = 1-(LateralA./maxLateralAs).^2;
+                OverMax = InsideSqrt < 0;
+                
+                LongA = -1 * maxBrakeA.*sqrt(InsideSqrt);
+                LongA(OverMax) = 0.01;
+
                 I = isnan(LongA);
                 LongA(I) = -1 * maxBrakeA(I);
             end
