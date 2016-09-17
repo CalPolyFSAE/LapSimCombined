@@ -21,6 +21,7 @@ classdef CarTire < handle
         J % Rotational inertia (lbf in^2)
         Radius % Effective radius (in)
         TireModel
+        MaxPossibleAcceleration
         Name = '';
     end
     
@@ -78,6 +79,7 @@ classdef CarTire < handle
             T.EffectiveCG = CG;
             T.J = J;
             T.TireModel = TM;
+            T.MaxPossibleAcceleration = 5.0;
         end
         
         function CalculateLateralGMap(T,CarObject,TrackObject)
@@ -123,7 +125,7 @@ classdef CarTire < handle
             Kf_initial = Kf;
             Kr_initial = Kr;
             
-            Gs = (0:0.01:2)';
+            Gs = (0:0.01:T.MaxPossibleAcceleration)';
             Velocity = sqrt(Gs * 32.2 * 12 * Radius); %in/s
             Fz_aero_delta = CarObject.CalculateAeroEffects(Velocity);
             
@@ -246,7 +248,7 @@ classdef CarTire < handle
             FR = [ a b ];
             
             % Acceleration
-            Gs = (0:0.01:2)';
+            Gs = (0:0.01:T.MaxPossibleAcceleration)';
             
             Fz = LongitudinalWeightTransfer( Kf, Kr, Kt, Gs, Ws, Wfus, Wrus, hCG, PC, FR, L );
             Fz_aero_deltas = CarObject.CalculateAeroEffects(Velocity);
@@ -279,7 +281,7 @@ classdef CarTire < handle
             forwardG = RearGs(I);
             
             % Braking
-            Gs = -(0:0.01:5)';
+            Gs = -(0:0.01:T.MaxPossibleAcceleration)';
             
             Fz = LongitudinalWeightTransfer( Kf, Kr, Kt, Gs, Ws, Wfus, Wrus, hCG, PC, FR, L );
             
@@ -321,7 +323,7 @@ classdef CarTire < handle
             
             
             % Regen
-            Gs = -(0:0.01:2)';
+            Gs = -(0:0.01:T.MaxPossibleAcceleration)';
             
             Fz = LongitudinalWeightTransfer( Kf, Kr, Kt, Gs, Ws, Wfus, Wrus, hCG, PC, FR, L );
             Fz_aero_deltas = CarObject.CalculateAeroEffects(Velocity);
