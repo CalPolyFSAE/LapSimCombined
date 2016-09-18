@@ -151,8 +151,7 @@ classdef Car < handle
             LookUpTable = [Velocity,Drag,AxleRPM,MotorRPM,BrakeTorque,ForwardGs,LateralGs,TractiveLimit, MotorTorque, MotorPower];
         end
         
-        function [ LookUpTable ] = CornerAccTableGenerator( CarObject,R,Velocity,Drag)
-            
+        function [ LookUpTable ] = CornerAccTableGenerator( CarObject,R,Velocity,Drag) 
             RollingR = CarObject.Weight*CarObject.Tire.RollingResistance; % Rolling Resistance force for car configuration
             
             % Pulls max lateral Gs available from map.
@@ -292,7 +291,6 @@ classdef Car < handle
             deltaFz(:, 3) = Ry_diff / 2;
             deltaFz(:, 4) = Ry_diff / 2;
         end
-        
     end
     
 end

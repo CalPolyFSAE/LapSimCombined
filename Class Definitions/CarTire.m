@@ -222,7 +222,7 @@ classdef CarTire < handle
         end
         
         function CalculateLongitudinalGMap(T, CarObject)
-            Velocities = 0:100:1800; % 0 - ~100mph
+            Velocities = 0:100:3600;
             [ForwardGs, BrakingGs, RegenGs] = arrayfun(@(velocity)(LongitudinalGCalculator(T, CarObject, velocity)), Velocities);
             T.ForwardAccelerationMap = struct('accelerations', ForwardGs, 'velocities', Velocities);
             T.BrakingAccelerationMap = struct('accelerations', BrakingGs, 'velocities', Velocities);
