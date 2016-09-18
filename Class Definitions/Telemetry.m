@@ -360,18 +360,16 @@ classdef Telemetry < handle
             V = Tele.LapData(:,2)*(3600/(5280*12));
             X = Tele.LapData(:,1)/12;
             
-            %             figure
-            %             plot(X,V);
-            %             xlabel('Distance (ft)')
-            %             ylabel('Speed (mph)')
-            %             title('Lap Speeds')
-            %
-            %             figure
-            %             hist(Tele.LapData(:,7),100);
-            %             xlabel('Motor Speed (RPM)')
-            %             ylabel('Number of Occurrences')
-            %             title('Motor RPM Histogram')
-            
+%             figure
+%             plot(X,V);
+%             xlabel('Distance (ft)')
+%             ylabel('Speed (mph)')
+%             title('Lap Speeds')
+% 
+%             figure
+%             hist(V,100);
+%             xlabel('Velocity')
+%             ylabel('Number of Occurences')
             for i = 1:S
                 
                 R = Track.Track(i).Radius;
@@ -447,6 +445,7 @@ classdef Telemetry < handle
             
             TminEnd = 73.48;
             Tmax = 1.45*TminEnd;
+
             if TotalTime > Tmax
                 EndScore = EnduranceLaps;
             else

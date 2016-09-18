@@ -11,7 +11,7 @@ function [Results, RawResults] = ExcelSweep(TrackFcn, StartRow, EndRow, TabName)
     
     for i = RowIndices
         EnduranceEnergy = 0; %Initialize
-%         Track = TrackFcn();
+        Track = TrackFcn();
 		Car = CarBuilderSS(TabName, i + StartRow - 1);
 		Tele = Simulate(Car, Track);
 		
@@ -21,7 +21,7 @@ function [Results, RawResults] = ExcelSweep(TrackFcn, StartRow, EndRow, TabName)
 		TimeSkid = 2*pi*sqrt(9.1/(9.81*MaxG));
 		TimeEnd = TimeAutoX * EnduranceLaps;
         
-        switch CarTabName
+        switch Car.TabName
             case 'Electric'
         
 		EnduranceLapPowers = Tele.LapData(1:Track.Length,8)*0.000112985;
