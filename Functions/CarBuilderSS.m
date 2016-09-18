@@ -143,7 +143,7 @@ switch tabName
         RPMincrement = (0:max(RPMS)/length(fuel_map_raw):length(RPMS)-2)'; %RPM's array with fuel step increment
         E = abs(spline(RPMincrement,fuel_map_raw,RPMS)); %fuel_map
         
-        Battery = CarBattery(Capacity,Weight,CG);
+        Battery = CarBattery(Capacity,Weight,CG, 0, 0);
         
         %Engine Parameters again
 %         P = 14.7; %[Psi] at WOT
@@ -172,7 +172,7 @@ C = Car(Brakes,Driveline,Motor,Chassis,Battery,Suspension,Tire,Drag,CrossArea);
 C.LiftCoefficient = Lift;
 C.Rho = rho;
 C.CenterOfPressure = cop;
-C.BrakingMode = 'Regen';
+C.BrakingMode = 'Hydraulic';
 C.TabName = tabName;
 
 end

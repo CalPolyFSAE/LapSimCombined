@@ -147,7 +147,7 @@ classdef Car < handle
             % Tractive limit is reached at all points with ideal braking
             TractiveLimit = ones(length(ForwardGs),1);
             
-            %    1       2     3        4       5           6        7           8               9
+                         %    1       2     3        4       5           6        7           8               9
             LookUpTable = [Velocity,Drag,AxleRPM,MotorRPM,BrakeTorque,ForwardGs,LateralGs,TractiveLimit, MotorTorque, MotorPower];
         end
         
