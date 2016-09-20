@@ -7,55 +7,55 @@ function [ RawResults, PointsResults ] = RPMLimitingAnalysis(CarFcn, TrackFcn)
 RegenOnOff = [0 1];
 RegenLength = 2;
 
-GearRatios = (6:-1:3);
+GearRatios = (5:-0.1:3);
 GearRatioLength = length(GearRatios);
 
-RPMCutOffs = [5000 4800 4300 4000 3800 3500 3000 2000];
+RPMCutOffs = (5500:-500:3000);
 RPMCutOffLength = length(RPMCutOffs);
 
-RawResults = cell(RegenLength, GearRatioLength, RPMCutOffLength);
-PointsResults = zeros(RegenLength, GearRatioLength, RPMCutOffLength);
+RawResults = cell(GearRatioLength, RPMCutOffLength);
+PointsResults = zeros(GearRatioLength, RPMCutOffLength);
 
 EnduranceLength = 866142; % 22km in inches
 % EnduranceLaps = EnduranceLength/Track.Length;
 
-parfor i = 1:RegenLength
-    for j = 1:GearRatioLength
-        Car = CarFcn();
-        Track = TrackFcn();
+parfor j = 1:GearRatioLength
+    Car = CarFcn();
+    Track = TrackFcn();
+
+    %        Car.CG = [(Car.Chassis.Length * (1-WeightDistribution(i))) Car.CG(2) Car.CG(3)];
+    GR = GearRatios(j);
+    Car.Driveline.SetGearRatios(GR, Car.Motor.OutputCurve);
+
+    Tele = Simulate(Car,Track);
+
+%     if RegenOnOff(i) == 0
+%         Car.BrakingMode = 'Hydraulic';
+%     else
+%         Car.BrakingMode = 'Regen';
+%     end
+
+    for k = 1:RPMCutOffLength
+        RPM = round(RPMCutOffs(k) / GR);
+        Car.Driveline.SetRPMLimit(RPM);
+
+        [~, ~, ~, TeleEndurance ] = EnduranceSimulationBasic(Car,Track,EnduranceLength);
         
-        %        Car.CG = [(Car.Chassis.Length * (1-WeightDistribution(i))) Car.CG(2) Car.CG(3)];
-        GR = GearRatios(j);
-        Car.Driveline.SetGearRatios(GR, Car.Motor.OutputCurve);
+        % Fill in Endurance Times & Scores
+        Tele.Miscellaneous{4} = TeleEndurance.Miscellaneous{4};  
+        Tele.Miscellaneous{5} = TeleEndurance.Miscellaneous{5};
         
-        Tele = Simulate(Car,Track);
-        
-        if RegenOnOff(i) == 0
-            Car.BrakingMode = 'Hydraulic';
-        else
-            Car.BrakingMode = 'Regen';
-        end
-        
-        for k = 1:RPMCutOffLength
-            RPM = round(RPMCutOffs(k) / GR);
-            Car.Driveline.SetRPMLimit(RPM);
-            
-            [~, ~, ~, TeleEndurance ] = EnduranceSimulationBasic(Car,Track,EnduranceLength);
-            
-            % Fill in Endurance Times & Scores
-            Tele.Miscellaneous{4} = TeleEndurance.Miscellaneous{4};  
-            Tele.Miscellaneous{5} = TeleEndurance.Miscellaneous{5};
-            Tele.Results{13} = TeleEndurance.Results{13};
-            Tele.Results{14} = TeleEndurance.Results{14};
-            Tele.Results{9} = TeleEndurance.Results{10} + ...
-                TeleEndurance.Results{11} + ...
-                TeleEndurance.Results{12} + ...
-                TeleEndurance.Results{13} + ...
-                TeleEndurance.Results{14};
-            
-            RawResults{i,j,k} = Tele;
-            PointsResults(i,j,k) = Tele.Results{9};
-        end
+        Tele.Results{13} = TeleEndurance.Results{13};
+        Tele.Results{14} = TeleEndurance.Results{14};
+        Tele.Results{9} = ...
+            Tele.Results{10} + ...
+            Tele.Results{11} + ...
+            Tele.Results{12} + ...
+            Tele.Results{13} + ...
+            Tele.Results{14};
+
+        RawResults{j,k} = Tele;
+        PointsResults(j,k) = Tele.Results{9};
     end
 end
 
