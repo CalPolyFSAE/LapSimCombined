@@ -84,18 +84,27 @@ switch tabName
     case 'Electric'
         % Electric Motor Parameters
         
-        PeakTorque = 2124.18; % in-lb
-        RedLineTorque = 1354;
+        PeakTorque = 240; % Nm
+        PowerLimit = 80; % kW
         Efficiency = 0.95;
-        RPMLimit = 5000;
-        RPMTaper = 3100;
+        RPMLimit = 5500;
+        PowerScaler = 1 / 9549; % Nm * RPM * PowerScaler = kW
         
-        RPMS = (0:1:RPMLimit)';
-        T = ones(RPMTaper + 1, 1) * PeakTorque * Tmult; % in lbf
-        T = [T;(((RPMTaper + 1:1:RPMLimit)'-RPMTaper)/(RPMLimit-RPMTaper))*(RedLineTorque-PeakTorque)+PeakTorque];
-        T = T * Efficiency;
-        E = ones(length(RPMS),1)*Efficiency;
-        OutputCurve = [RPMS,T,E];
+        RPMS = (0:RPMLimit)';
+        Torque = ones(RPMLimit + 1, 1) * PeakTorque;
+        
+        for i = 1:RPMLimit+1
+            if Torque(i) * RPMS(i) * PowerScaler > PowerLimit
+                Torque(i) = PowerLimit / (RPMS(i) * PowerScaler);
+            end
+        end
+        
+        Torque = Torque * 8.8507;
+        Torque(RPMLimit+1) = 0;
+        
+        
+        EfficiencyCurve = ones(length(RPMS),1)*Efficiency;
+        OutputCurve = [RPMS,Torque,EfficiencyCurve];
         NMotors = 1;
         Weight = 0; % lb
         Motor = CarMotor(OutputCurve,NMotors,Weight,CG);
