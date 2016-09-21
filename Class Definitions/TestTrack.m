@@ -9,7 +9,7 @@ classdef TestTrack < handle
     %   consistency. The coder is trusted to input logical geometric 
     %   information when editing or creating track code.
     
-    properties (SetAccess = private)
+    properties
         Track % Array of track section objects
         Length % Total length of the track
         Sections % Number of track sections
@@ -17,13 +17,13 @@ classdef TestTrack < handle
         CornerRadii % Array of corner radii the car will negotiate
         
         MinAutoXTime
-        MinEndTime
-        MinEndLapTime
         MinSkidpadTime
         MinAccelerationTime
+        MinEndLapTime
         MinEndEnergy
+        MaxEndEnergy
         MinEndEnergyFactor
-        NumberOfEnduranceLaps
+        MaxEndEnergyFactor
     end % properties
     
     methods

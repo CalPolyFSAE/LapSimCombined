@@ -38,7 +38,7 @@ K = setupSheetData(50); % lbf/in
 R = setupSheetData(51); % in
 RollingResistance = setupSheetData(52);
 J = setupSheetData(53); % slugs in^2
-W = setupSheetData(54); % lb
+W = 0.0; %setupSheetData(54); % lb
 % TireModel = num2str(xlsread('SetupSheets.xlsx',setup,'BC6','basic'));
 TireModel = @Hoosier13;
 
@@ -111,7 +111,7 @@ switch tabName
         
         % Battery Parameters
         
-        Capacity = setupSheetData(89); % kWh
+        Capacity = 5.5;%setupSheetData(89); % kWh
         Weight = setupSheetData(90); % lb
         NominalVoltage = 262.2; % V
         Resistance = 0.16; % ohms

@@ -6,7 +6,7 @@ track = Track();
 TF = 1;
 TFDecrement = .1;
 
-Laps = floor(EnduranceLength/track.Length);
+Laps = ceil(EnduranceLength/track.Length);
 
 while true
     Car.Driveline.SetTorqueFactor(TF);

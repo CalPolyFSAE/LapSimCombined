@@ -81,7 +81,14 @@ end
 
 % Calls TestTrack Constructor
 Track = TestTrack(TSArray);
-
+Track.MinAutoXTime = 75.97; % Should be 77 per results but we use the same course for both.
+Track.MinEndLapTime = 75.97;
+Track.MinSkidpadTime = 4.714; % Using Michigan because FSG skidpad is done in the wet.
+Track.MinAccelerationTime = 3.506;
+Track.MinEndEnergy = 0.216;
+Track.MaxEndEnergy = 1.123;
+Track.MinEndEnergyFactor = 0.1;
+Track.MaxEndEnergyFactor = 0.88;
 
 end
 

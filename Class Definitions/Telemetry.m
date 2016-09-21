@@ -337,7 +337,6 @@ classdef Telemetry < handle
             
             EnduranceLength = 866142; % 22km in inches
             EnduranceLaps = ceil(EnduranceLength/Track.Length);
-            TEnd = EnduranceLaps*TotalTime;
             
             Power = Tele.LapData(:,8);
             Power = Power*0.000112985;
@@ -409,7 +408,7 @@ classdef Telemetry < handle
                 
             end
             
-            Tmin = 4.070;
+            Tmin = Track.MinAccelerationTime;
             Tmax = Tmin*1.50;
             AccScore = (71.5*(Tmax/TotalAccTime-1))/((Tmax/Tmin)-1) + 3.5;
             if AccScore > 75
@@ -419,7 +418,7 @@ classdef Telemetry < handle
             end
             disp(['75m Run Score        : ', num2str(AccScore)])
             
-            Tmin = 76.908;
+            Tmin = Track.MinAutoXTime;
             Tmax = 1.45*Tmin;
             
             PerformancePoints = 142.5*(Tmax/TotalTime - 1)/(Tmax/Tmin - 1);
@@ -432,10 +431,11 @@ classdef Telemetry < handle
             end
             disp(['AutoCross Score      : ', num2str(AutoXScore)])
             
-            SkidPadT = 2*pi*sqrt(9.1/(9.81*Car.Tire.MaxLateralAcceleration));
-            Tmin = 5.602;
+            SkidpadLatAccel = interp1(Car.Tire.LateralAccelerationMap.radii, Car.Tire.LateralAccelerationMap.accelerations, 75 * 39.37, 'linear');
+            SkidPadT = 2*pi*sqrt(9.1/(9.81*SkidpadLatAccel)) * 1.15; % The 1.15 is a fudge factor so that we don't get a perfect score and can therefore compare different car configurations.
+            Tmin = Track.MinSkidpadTime;
             Tmax = 1.25*Tmin;
-            SkidPadScore = 71.5*((Tmax/SkidPadT)^2-1)/((Tmax/Tmin)^2-1) + 3.5;
+            SkidPadScore = 71.5*((Tmax/SkidPadT)^2-1)/((Tmax/Tmin)^2-1) + 2.5;
             if SkidPadScore > 75
                 SkidPadScore = 75;
             elseif SkidPadScore < 0
@@ -443,33 +443,32 @@ classdef Telemetry < handle
             end
             disp(['Skid Pad Score       : ', num2str(SkidPadScore)])
             
-            TminEnd = 73.48;
-            Tmax = 1.45*TminEnd;
-
-            if TotalTime > Tmax
-                EndScore = EnduranceLaps;
-            else
-                EndScore = 250*(((Tmax/TotalTime) - 1)/((Tmax/TminEnd) - 1)) + 50;
+            TminEnd = Track.MinEndLapTime;
+            Tmax = 1.45 * TminEnd;
+            EndScore = 250*(((Tmax/TotalTime) - 1)/((Tmax/TminEnd) - 1)) + 50;
+            
+            if (TotalEnergy * EnduranceLaps > Car.Battery.Capacity)
+                EndScore = 0;
             end
             
             disp(['Endurance Score       : ', num2str(EndScore)])
             
-            EFmin = 0.36;
-            EFmax = 0.93;
+            EFmin = Track.MinEndEnergyFactor;
+            EFmax = Track.MaxEndEnergyFactor;
             CO2min = .3594;
             switch Car.TabName
                 case 'Combustion'
                     CO2kg = Car.Battery.Capacity*2.3/EnduranceLaps;
                 case 'Electric'
-                    CO2kg = Car.Battery.Capacity*0.65/EnduranceLaps;
+                    CO2kg = TotalEnergy*0.65/EnduranceLaps;
             end
             
             EF = (TminEnd/TotalTime)*(CO2min/CO2kg);
             EScore = 100*((EFmin/EF)-1)/((EFmin/EFmax)-1);
-            if EScore > 100
-                EScore = 100;
-            elseif EScore < 0
+            if EScore < 0 || EndScore == 0
                 EScore = 0;
+            elseif EScore > 100
+                EScore = 100;
             end
             
             disp(['Efficiency Score       : ', num2str(EScore)])

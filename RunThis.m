@@ -23,15 +23,15 @@
 rowNumber = 6;
 
 Car = @()(CarBuilderSS('Electric', rowNumber));
-%Track = @FSAEMichigan2015_Schraeger_Version3;
- Track = @FSG2013;
+%Track = @FSAEMichigan2015;
+Track = @FSG2013;
 
 car = Car();
 track = Track();
 
 [ RawResults,PointResults ] = RPMLimitingAnalysis( Car,Track );
-%Simulate( car, track )
-% save('BatteryandRPMLimitingAnalysis')
+% Simulate( car, track )
+save('BatteryandRPMLimitingAnalysis')
 
 % [Results, RawResults] = ExcelSweep(Track,6,8,'Combustion');
 
