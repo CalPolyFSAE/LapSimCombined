@@ -138,7 +138,9 @@ classdef CarTire < handle
                 I = Fz < 0;
                 Fz(I) = 1;
                 
-                [Fy, ~] = T.TireModel(Fz,'Lateral');
+                [Fy, SA] = T.TireModel(Fz,'Lateral');
+                
+                Fy = Fy .* cosd(SA);  % Find Lateral Force Eff.
                 
                 % Remove any NaN wheel forces.
                 NaNI = isnan(Fy);
