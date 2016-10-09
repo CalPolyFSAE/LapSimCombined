@@ -241,16 +241,6 @@ classdef Car < handle
             % Calculate wheel force and brake torque based on backward Gs
             WheelF = BackGs*CarObject.Weight*CarObject.Keq - Drag - RollingR;
             BrakeTorque = WheelF*CarObject.Tire.Radius;
-            % Find indexes where calculated brake torque is more than
-            % available from brakes
-            I = find(BrakeTorque > sum(CarObject.Brakes.Torque));
-            if I
-                % and set brake torque to the limiting available torque
-                BrakeTorque(I) = sum(CarObject.Brakes.Torque);
-                % Recalculate wheel force and Gs
-                WheelF = BrakeTorque/CarObject.Tire.Radius;
-                BackGs = (WheelF + Drag + RollingR)/(CarObject.Keq*CarObject.Weight);
-            end
             
             % Calculate axle and motor rpms based on given velocity array
             AxleRPM = Velocity/(CarObject.Tire.Radius*pi/30);
@@ -258,7 +248,7 @@ classdef Car < handle
             
             % Tractive limit is reached at all indexes where braking torque
             % is less than the available braking torque
-            TractiveLimit = BrakeTorque < sum(CarObject.Brakes.Torque);
+            TractiveLimit = ones(length(LateralGs),1);
             
             %                  1      2     3        4         5        6        7           8
             LookUpTable = [Velocity,Drag,AxleRPM,MotorRPM,BrakeTorque,BackGs,LateralGs,TractiveLimit, zeros(length(LateralGs),1), zeros(length(LateralGs),1)];
