@@ -8,17 +8,19 @@ classdef CarBattery < handle
         EffectiveCG
         Resistance
         NominalVoltage
+        RoundtripEfficiency
 
         Name = '';
     end
     
     methods
-        function B = CarBattery(Capacity,Weight,CG,Resistance,NominalVoltage)
+        function B = CarBattery(Capacity,Weight,CG,Resistance,NominalVoltage,RoundtripEfficiency)
             B.Capacity = Capacity;
             B.Weight = Weight;
             B.EffectiveCG = CG;
             B.Resistance = Resistance;
             B.NominalVoltage = NominalVoltage;
+            B.RoundtripEfficiency = RoundtripEfficiency;
         end
         
     end

@@ -62,17 +62,16 @@ classdef CarMotor < handle
         end
         
         function [ Torque, Efficiency ] = Output(M,RPM)
-            I1 = find(M.OutputCurve(:,1) >= RPM, 1, 'first');
-            I2 = find(M.OutputCurve(:,1) <= RPM, 1, 'last');
-            Diff1 = M.OutputCurve(I1,1) - RPM;
-            Diff2 = RPM - M.OutputCurve(I2,1);
-            if Diff1 > Diff2
-                Torque = M.OutputCurve(I2,2);
-                Efficiency = M.OutputCurve(I2,3);
-            else
-                Torque = M.OutputCurve(I2,2);
-                Efficiency = M.OutputCurve(I2,3);
-            end
+            Torque = interp1(RPM, M.OutputCurve(:,1), M.OutputCurve(:,2));
+            Efficiency = interp1(RPM, M.OutputCurve(:,1), M.OutputCurve(:,3));            
+        end
+        
+        function Efficiency = GetEfficiency(M, RPM)
+            [ ~, Efficiency ] = Output(M,RPM);
+        end
+        
+        function Torque = GetMaxTorque(M, RPM)
+            [ Torque, ~ ] = Output(M, RPM);
         end
         
         function Plot(M)
@@ -80,7 +79,7 @@ classdef CarMotor < handle
                 M.OutputCurve(:,1),M.OutputCurve(:,3));
             title([M.Name, ' Output Curve'])
             xlabel('Engine Speed (RPM)')
-            set(get(AX(1),'Ylabel'),'String','Engine Torque (ft*lb)')
+            set(get(AX(1),'Ylabel'),'String','Engine Torque (in*lb)')
             set(get(AX(2),'Ylabel'),'String','Engine Efficiency (out of 1)')
             set(AX(2),'ylim',[0.0 1.0])
             grid on

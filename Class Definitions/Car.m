@@ -16,7 +16,7 @@ classdef Car < handle
         FrontCrossSection %in^2
         Rho %slug/ft^3
         Weight
-        CG
+        CG  % [ Distance from Front Bulkhead, Distance from car centerline, Height above ground ]
         SprungMass
         UnsprungMass
         Keq
@@ -86,7 +86,6 @@ classdef Car < handle
             
             
             % Calculate power consumption for each motor rpm
-            
             switch CarObject.TabName
                 case 'Electric'
                     Power = (AdjustedMotorT.*MotorRPM./MotorE)*pi/30;
@@ -137,8 +136,8 @@ classdef Car < handle
                 MotorPower = zeros(length(MotorTorque),1);
             elseif strcmp(CarObject.BrakingMode, 'Regen')
                 % Assume motor uses tires at full potential
-                Efficiency = .9 * .95 * .9; % Motor * Driveline * Battery
-                MotorPower = (MotorTorque .* MotorRPM)*Efficiency * pi/30;
+                Efficiency = CarObject.Motor.GetEfficiency(MotorRPM) * CarObject.Driveline.Efficiency * CarObject.Battery.RoundtripEfficiency;
+                MotorPower = (MotorTorque .* MotorRPM) .* Efficiency * pi/30;
             end
             
             % Straight brake curve, therefore lateral Gs is always zero
@@ -246,12 +245,20 @@ classdef Car < handle
             AxleRPM = Velocity/(CarObject.Tire.Radius*pi/30);
             MotorRPM = CarObject.Driveline.OutputCurve(round(AxleRPM) + 1, 3);
             
+            switch CarObject.BrakingMode
+                case 'Regen'
+                    MotorPower = BrakeTorque .* AxleRPM .* CarObject.Motor.GetEfficiency(MotorRPM) .* CarObject.Driveline.Efficiency .* CarObject.Battery.RoundtripEfficiency * pi/30;
+                case 'Hydraulic'
+                    MotorPower = zeros(length(LateralGs),1);
+            end
+            
+            
             % Tractive limit is reached at all indexes where braking torque
             % is less than the available braking torque
             TractiveLimit = ones(length(LateralGs),1);
             
             %                  1      2     3        4         5        6        7           8
-            LookUpTable = [Velocity,Drag,AxleRPM,MotorRPM,BrakeTorque,BackGs,LateralGs,TractiveLimit, zeros(length(LateralGs),1), zeros(length(LateralGs),1)];
+            LookUpTable = [Velocity,Drag,AxleRPM,MotorRPM,BrakeTorque,BackGs,LateralGs,TractiveLimit, zeros(length(LateralGs),1), MotorPower];
             
         end
         
