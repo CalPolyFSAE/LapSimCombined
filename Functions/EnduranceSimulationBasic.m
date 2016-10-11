@@ -32,6 +32,8 @@ while true
     Error = Car.Battery.Capacity - Energy;
     
     if Error > Car.Battery.Capacity/50
+        Time = inf;
+        TF = 0;
         break;
     end
     

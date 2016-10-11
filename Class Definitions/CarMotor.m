@@ -9,14 +9,12 @@ classdef CarMotor < handle
         OutputCurve  % Output curve of the car, given as a 3 column vector.
                      % The first column is RPM, the second is torque in in
                      % lb, and the third is efficiency.
-        Weight       % Weight of the motor system given in lbs
-        EffectiveCG  % 3 element vector giving motor cg in inches
         NMotors      % Number of motors used
         Name = '';
     end
     
     methods
-        function M = CarMotor(OutputCurve,NMotors,Weight,CG)
+        function M = CarMotor(OutputCurve,NMotors)
             % CarMotor Constructor method
             %
             % This method constructs an object of type CarMotor.  To define
@@ -33,10 +31,6 @@ classdef CarMotor < handle
             %                                     of 1.
             %
             % NMotors       int           N/A     Number of motors on car
-            %
-            % Weight        float         lbs     Weight of the motor(s)
-            %
-            % CG            1x3 array     in      CG of motor system
             %
             %
             % OUTPUTS
@@ -57,8 +51,6 @@ classdef CarMotor < handle
             % Assigns values to tire object properties
             M.OutputCurve = OutputCurve;
             M.NMotors = NMotors;
-            M.Weight = Weight;
-            M.EffectiveCG = CG;
         end
         
         function [ Torque, Efficiency ] = Output(M,RPM)

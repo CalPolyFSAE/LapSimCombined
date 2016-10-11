@@ -1,14 +1,9 @@
 classdef CarSuspension < handle
-    %UNTITLED9 Summary of this class goes here
-    %   Detailed explanation goes here
     
     properties
         LinearSpring
         ARB
-        Weight
-        EffectiveCG
-        SprungMass
-        UnsprungMass
+        UnsprungWeight
         UnsprungHeight
         RollCenters
         PitchCenter
@@ -16,16 +11,13 @@ classdef CarSuspension < handle
     end
     
     methods
-        function S = CarSuspension(SpringRate,ARBRate,SprungM,UnsprungM,UnsprungH,RC,PC,CG)
+        function S = CarSuspension(SpringRate,ARBRate,UnsprungW,UnsprungH,RC,PC)
             S.LinearSpring = SpringRate;
             S.ARB = ARBRate;
-            S.Weight = SprungM + sum(UnsprungM);
-            S.SprungMass = SprungM;
-            S.UnsprungMass = UnsprungM;
+            S.UnsprungWeight = UnsprungW;
             S.UnsprungHeight = UnsprungH;
             S.RollCenters = RC;
             S.PitchCenter = PC;
-            S.EffectiveCG = CG;
         end
         
     end

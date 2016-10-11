@@ -1,62 +1,66 @@
 classdef Car < handle
-    %UNTITLED12 Summary of this class goes here
-    %   Detailed explanation goes here
-    
+
     properties
         Brakes
         Driveline
         Motor
-        Chassis
         Battery
         Suspension
         Tire
+        
         DragCoefficient
         LiftCoefficient
         CenterOfPressure %in
         FrontCrossSection %in^2
         Rho %slug/ft^3
-        Weight
+       
         CG  % [ Distance from Front Bulkhead, Distance from car centerline, Height above ground ]
-        SprungMass
-        UnsprungMass
+        Weight
+        SprungWeight
+        UnsprungWeight
         Keq
+        EquivalentWeight
+        
+        TrackWidth
+        Wheelbase
+        
         TabName
         Name = '';
-        
         BrakingMode % 'Hydraulic', 'Regen', 'Combined'
     end
     
     methods
-        function C = Car(Brakes,Driveline,Motor,Chassis,Battery,Suspension,Tire,DragC,XArea)
+        function C = Car(Brakes,Driveline,Motor,Battery,Suspension,Tire,FA,CL,CD,CarWeight,CarCG,DriverWeight,DriverCG,TrackWidth,Wheelbase)
             C.Brakes = Brakes;
             C.Driveline = Driveline;
             C.Motor = Motor;
-            C.Chassis = Chassis;
             C.Battery = Battery;
             C.Suspension = Suspension;
             C.Tire = Tire;
-            C.DragCoefficient = DragC;
-            C.FrontCrossSection = XArea;
             
-            C.UnsprungMass = Brakes.UnsprungMass + Driveline.UnsprungMass + Suspension.UnsprungMass + Tire.Weight/2;
-            C.SprungMass = Battery.Weight + Brakes.SprungMass + Chassis.TotalWeight + Driveline.SprungMass + Motor.Weight + Suspension.SprungMass;
-            
-            C.Weight = sum(C.UnsprungMass) + C.SprungMass;
-            C.CG = (Brakes.Weight.*Brakes.EffectiveCG + Driveline.Weight.*Driveline.EffectiveCG...
-                + Motor.Weight.*Motor.EffectiveCG + Chassis.TotalWeight.*Chassis.EffectiveCG...
-                + Battery.Weight.*Battery.EffectiveCG + Suspension.Weight.*Suspension.EffectiveCG...
-                + Tire.Weight.*Tire.EffectiveCG)/C.Weight;
+            C.DragCoefficient = CD;
+            C.LiftCoefficient = CL;
+            C.FrontCrossSection = FA;
             
             I = Tire.J + Brakes.J + Driveline.J;
             R = Tire.Radius;
-            M = C.Weight/32.174;
             
-            C.Keq = (I/(R^2*M)) + 1;
+            C.Weight = CarWeight + DriverWeight;
+            C.UnsprungWeight = sum(Suspension.UnsprungWeight);
+            C.SprungWeight = C.Weight - C.UnsprungWeight;
             
+            C.Keq = (I / ( R^2 * C.Weight / 32.174)) + 1;
+            C.EquivalentWeight = C.Keq * C.Weight;
+            
+            CombinedCG = (CarWeight .* CarCG + DriverWeight .* DriverCG) / C.Weight;
+            C.CG = CombinedCG;
+            
+            C.TrackWidth = TrackWidth;
+            C.Wheelbase = Wheelbase;
         end
         
         function [ LookUpTable ] = StraightAccTableGenerator( CarObject )          
-            RollingR = CarObject.Weight*CarObject.Tire.RollingResistance; % Rolling Resistance force for car configuration
+            RollingR = CarObject.Weight * CarObject.Tire.RollingResistance; % Rolling Resistance force for car configuration
             
             MotorRPM = CarObject.Driveline.OutputCurve(:,3);
             MotorT   = CarObject.Driveline.OutputCurve(:,4);  %in-lb
@@ -67,23 +71,24 @@ classdef Car < handle
             
             % Calculate Car Velocity for each Axle RPM value
             Velocity = CarObject.Tire.Radius*AxleRPM*pi/30; % in/s
-            % Calculate corresponding drag for each veloicty
+            % Calculate corresponding drag for each velocity
             [~,~,Drag]=CarObject.CalculateAeroEffects(Velocity);
             
-            MaxDrivelineA   = (WheelF - Drag - RollingR)/(CarObject.Keq*CarObject.Weight/(12*32.174)); % in/s^2
-            MaxDrivelineGs  = MaxDrivelineA/(12*32.174);
+            MaxDrivelineGs   = WheelF / CarObject.EquivalentWeight; % g's
+            MaxTireGs = interp1(CarObject.Tire.ForwardAccelerationMap.velocities, CarObject.Tire.ForwardAccelerationMap.accelerations, Velocity, 'linear');
             
             % Compare driveline acceleration to possible acceleration from
             % tires and reduce accelerations to those values
-            maxForwardGsTire = interp1(CarObject.Tire.ForwardAccelerationMap.velocities, CarObject.Tire.ForwardAccelerationMap.accelerations, Velocity, 'spline');
-            ForwardGs = min(MaxDrivelineGs, maxForwardGsTire);
+            ForwardGs = min(MaxDrivelineGs, MaxTireGs);
+            ForwardF = CarObject.EquivalentWeight * ForwardGs;
+            
+            % Reduce forward G's due to drag and rolling resistance forces.
+            ForwardGs = (ForwardF - Drag - RollingR) / CarObject.EquivalentWeight;
             
             % Recalculate Driveline torque values based on available
             % traction.
-            AdjustedWheelF = ForwardGs*(12/32.174);
-            AdjustedAxleT = AdjustedWheelF * CarObject.Tire.Radius;
+            AdjustedAxleT = ForwardF * CarObject.Tire.Radius;
             AdjustedMotorT = AdjustedAxleT ./ AxleT .* MotorT;
-            
             
             % Calculate power consumption for each motor rpm
             switch CarObject.TabName
@@ -97,29 +102,28 @@ classdef Car < handle
             
             % Tractive limit is reached at all of the indexes that were
             % previously adjusted to match tire acceleration
-            [~, TractiveLimit] = ismember(ForwardGs, maxForwardGsTire);
+            [~, TractiveLimit] = ismember(ForwardGs, MaxTireGs);
             
             %    1       2     3        4            5         6           7     8         9        10
             LookUpTable = [Velocity,Drag,AxleRPM,MotorRPM,AdjustedMotorT,MotorE,Power,ForwardGs,LateralGs,TractiveLimit];
         end
         
         function [ LookUpTable ] = StraightDecTableGenerator(CarObject,Velocity,Drag)
-            RollingR = CarObject.Weight*CarObject.Tire.RollingResistance; % Rolling Resistance force for car configuration
-            
+            RollingR = CarObject.Weight * CarObject.Tire.RollingResistance;
             
             if strcmp(CarObject.BrakingMode, 'Hydraulic')
                 % Assume brakes use tire at full potential
-                ForwardGs = -1 * interp1(CarObject.Tire.BrakingAccelerationMap.velocities, CarObject.Tire.BrakingAccelerationMap.accelerations, Velocity, 'spline');
+                ForwardGs = -1 * interp1(CarObject.Tire.BrakingAccelerationMap.velocities, CarObject.Tire.BrakingAccelerationMap.accelerations, Velocity, 'linear');
             elseif strcmp(CarObject.BrakingMode, 'Regen')
                 % Assume motor uses tires at full potential
-                ForwardGs = -1 * interp1(CarObject.Tire.RegenAccelerationMap.velocities, CarObject.Tire.RegenAccelerationMap.accelerations, Velocity, 'spline');
+                ForwardGs = -1 * interp1(CarObject.Tire.RegenAccelerationMap.velocities, CarObject.Tire.RegenAccelerationMap.accelerations, Velocity, 'linear');
             end
             
             % Calculate wheel force based on tire capability.
-            WheelF = CarObject.Keq*CarObject.Weight*ForwardGs - Drag - RollingR;
+            WheelF = CarObject.EquivalentWeight * ForwardGs;
             
             % Calculate axle and motor rpms based on velocity
-            AxleRPM = Velocity/(CarObject.Tire.Radius*pi/30);
+            AxleRPM = Velocity / (CarObject.Tire.Radius*pi/30);
             MotorRPM = CarObject.Driveline.OutputCurve(round(AxleRPM)+1, 3);
             
             % Calculate applied brake/motor torque based on wheel force
@@ -140,6 +144,11 @@ classdef Car < handle
                 MotorPower = (MotorTorque .* MotorRPM) .* Efficiency * pi/30;
             end
             
+            % Increase Deceleration due to drag and rolling resistance
+            % contribution.
+            TotalF = WheelF + Drag + RollingR;
+            ForwardGs = TotalF / CarObject.EquivalentWeight;
+            
             % Straight brake curve, therefore lateral Gs is always zero
             LateralGs = zeros(length(Velocity),1);
             
@@ -151,7 +160,7 @@ classdef Car < handle
         end
         
         function [ LookUpTable ] = CornerAccTableGenerator( CarObject,R,Velocity,Drag) 
-            RollingR = CarObject.Weight*CarObject.Tire.RollingResistance; % Rolling Resistance force for car configuration
+            RollingR = CarObject.Weight * CarObject.Tire.RollingResistance; % Rolling Resistance force for car configuration
             
             % Pulls max lateral Gs available from map.
             MaxLatG = interp1(CarObject.Tire.LateralAccelerationMap.radii, CarObject.Tire.LateralAccelerationMap.accelerations, R, 'linear');
@@ -170,9 +179,9 @@ classdef Car < handle
             
             % Calculate wheel forces, axle torque, and motor torque based
             % on given forward Gs
-            WheelF = ForwardGs*CarObject.Weight*CarObject.Keq + Drag + RollingR;
-            AxleT  = WheelF*CarObject.Tire.Radius;
-            AxleRPM = Velocity*30/(pi*CarObject.Tire.Radius);
+            WheelF = ForwardGs * CarObject.EquivalentWeight;
+            AxleT  = WheelF * CarObject.Tire.Radius;
+            AxleRPM = Velocity * 30 / (pi * CarObject.Tire.Radius);
             
             % Round axle rpms to use as index for driveline output curve.
             AxleRPMIndexes = round(AxleRPM) + 1;
@@ -195,17 +204,13 @@ classdef Car < handle
             
             % Recalculate motor torque, motor rpm, wheel force, and forward
             % Gs based on adjusted available torque values.
-            
             MotorT = AxleT ./ DriveRatio;
             MotorRPM = AxleRPM .* DriveRatio;
             MotorE = CarObject.Driveline.OutputCurve(AxleRPMIndexes, 5);
             
-            WheelF = AxleT/CarObject.Tire.Radius; % lbf
-            ForwardGs = (WheelF - Drag - RollingR)/(CarObject.Keq*CarObject.Weight);
+            WheelF = AxleT / CarObject.Tire.Radius; % lbf
+            ForwardGs = (WheelF - Drag - RollingR) / CarObject.EquivalentWeight;
             
-            % calculate power consumption based on motor torque, rpm and
-            % efficiency
-            %             Power = ((MotorT.*MotorRPM./MotorE)*pi/30);
             switch CarObject.TabName
                 case 'Electric'
                     Power = ((MotorT.*MotorRPM./MotorE)*pi/30);
@@ -218,7 +223,6 @@ classdef Car < handle
         end
         
         function [ LookUpTable ] = CornerDecTableGenerator( CarObject,R,Velocity,Drag )
-            
             RollingR = CarObject.Weight*CarObject.Tire.RollingResistance; % Rolling Resistance force for car configuration
             
             % Pull max lateral Gs from tire model
@@ -238,12 +242,16 @@ classdef Car < handle
             BackGs = CarObject.Tire.GGCurve(LateralGs,'Brake',Velocity, CarObject.BrakingMode);
             
             % Calculate wheel force and brake torque based on backward Gs
-            WheelF = BackGs*CarObject.Weight*CarObject.Keq - Drag - RollingR;
-            BrakeTorque = WheelF*CarObject.Tire.Radius;
+            WheelF = BackGs * CarObject.EquivalentWeight;
+            BrakeTorque = WheelF * CarObject.Tire.Radius;
             
             % Calculate axle and motor rpms based on given velocity array
             AxleRPM = Velocity/(CarObject.Tire.Radius*pi/30);
             MotorRPM = CarObject.Driveline.OutputCurve(round(AxleRPM) + 1, 3);
+            
+            % Increase BackGs by including drag and rolling resistance
+            % forces.
+            BackGs = (WheelF + RollingR + Drag) / CarObject.EquivalentWeight;
             
             switch CarObject.BrakingMode
                 case 'Regen'
@@ -251,7 +259,6 @@ classdef Car < handle
                 case 'Hydraulic'
                     MotorPower = zeros(length(LateralGs),1);
             end
-            
             
             % Tractive limit is reached at all indexes where braking torque
             % is less than the available braking torque
@@ -271,8 +278,8 @@ classdef Car < handle
             lift=CarObject.LiftCoefficient.*q.*S;   %lbf
             drag=CarObject.DragCoefficient.*q.*S;   %lbf
 
-            frontAxleDistance = CarObject.CG(1);
-            rearAxleDistance = CarObject.Chassis.Length - CarObject.CG(1);
+            frontAxleDistance = CarObject.CG(1); % All distances / CGs locations are in inches.
+            rearAxleDistance = CarObject.Wheelbase - CarObject.CG(1);
             
             CGx = CarObject.CG(1);
             CGz = CarObject.CG(3);

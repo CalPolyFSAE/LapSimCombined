@@ -2,7 +2,7 @@ classdef CarTire < handle
     %CarTire is an object class used in the SAE Lap Sim in conjuction with
     %several other classes to build a Car class object.
     %   The Car tire is currently defined by it's GG curve (currently
-    %   assumed to be elliptical), rolling resistance, weight, system CG,
+    %   assumed to be elliptical), rolling resistance, weight
     %   mass moment of inertia about the CG, rotational inertia, effective
     %   radius.
     
@@ -16,17 +16,16 @@ classdef CarTire < handle
         LateralAccelerationMap % Max Lateral acceleration for at different radii
         RollingResistance % Constant rolling resistance coefficient
         SpringRate
-        Weight % Weight of all four tires (lbf)
-        EffectiveCG % CG of all tires (in inches from center rear axle)
         J % Rotational inertia (lbf in^2)
         Radius % Effective radius (in)
-        TireModel
+        RawTireModel
         MaxPossibleAcceleration
+        GripScalingFactor
         Name = '';
     end
     
     methods
-        function T = CarTire(TM,K,R,Resistance,Weight,CG,J)
+        function T = CarTire(TM,K,R,Resistance,J)
             % CarTire Constructor method
             %
             % This method constructs an object of type CarTire.  To define
@@ -47,8 +46,6 @@ classdef CarTire < handle
             %
             % Resistance    float         N/A     Rolling resistance
             %                                     coefficient.
-            %
-            % Weight        float         lbf     Weight of all four tires
             %
             % CG            1x3 Array     in      Center of gravity
             %                                     location on vehicle
@@ -75,11 +72,10 @@ classdef CarTire < handle
             T.SpringRate = K;
             T.Radius = R;
             T.RollingResistance = Resistance;
-            T.Weight = Weight;
-            T.EffectiveCG = CG;
             T.J = J;
-            T.TireModel = TM;
+            T.RawTireModel = TM;
             T.MaxPossibleAcceleration = 5.0;
+            T.GripScalingFactor = 0.88;
         end
         
         function CalculateLateralGMap(T,CarObject,TrackObject)
@@ -99,17 +95,17 @@ classdef CarTire < handle
         end
         
         function lateralG = LateralGCalculator(T,CarObject,Balance,Radius)
-            Ws = CarObject.SprungMass;
-            Wfus = CarObject.UnsprungMass(1);
-            Wrus = CarObject.UnsprungMass(2);
-            Tf = CarObject.Chassis.Track(1);
-            Tr = CarObject.Chassis.Track(2);
+            Ws = CarObject.SprungWeight;
+            Wfus = CarObject.Suspension.UnsprungWeight(1);
+            Wrus = CarObject.Suspension.UnsprungWeight(2);
+            Tf = CarObject.TrackWidth(1);
+            Tr = CarObject.TrackWidth(2);
             hfus = CarObject.Suspension.UnsprungHeight(1);
             hrus = CarObject.Suspension.UnsprungHeight(2);
             hfrc = CarObject.Suspension.RollCenters(1);
             hrrc = CarObject.Suspension.RollCenters(2);
             hCG = CarObject.CG(3) - (hfrc + hrrc)/2;
-            b = CarObject.CG(1)/CarObject.Chassis.Length;
+            b = CarObject.CG(1) / CarObject.Wheelbase;
             a = 1 - b;
             FR = [ a b ];
             
@@ -239,13 +235,13 @@ classdef CarTire < handle
             Kf = CarObject.Suspension.LinearSpring(1);
             Kr = CarObject.Suspension.LinearSpring(2);
             Kt = T.SpringRate;
-            Ws = CarObject.SprungMass;
-            Wfus = CarObject.UnsprungMass(1);
-            Wrus = CarObject.UnsprungMass(2);
+            Ws = CarObject.SprungWeight;
+            Wfus = CarObject.Suspension.UnsprungWeight(1);
+            Wrus = CarObject.Suspension.UnsprungWeight(2);
             hCG = CarObject.CG(3);
             PC = CarObject.Suspension.PitchCenter;
-            L = CarObject.Chassis.Length;
-            b = CarObject.CG(1)/CarObject.Chassis.Length;
+            L = CarObject.Wheelbase;
+            b = CarObject.CG(1)/L;
             a = 1 - b;
             FR = [ a b ];
             
@@ -440,6 +436,10 @@ classdef CarTire < handle
             
         end
         
+        function [F, S] = TireModel(T, Fz, Mode)
+            [F, S] = T.RawTireModel(Fz, Mode);
+            F = F * T.GripScalingFactor;
+        end
         
     end
     

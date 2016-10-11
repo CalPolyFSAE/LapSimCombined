@@ -6,10 +6,6 @@ classdef CarDriveline < handle
         GearRatios
         ShiftPoints
         Efficiency
-        Weight
-        EffectiveCG
-        SprungMass
-        UnsprungMass
         J
         FinalDriveRatio
         OutputCurve % [AxleRPM, AxleTorque, MotorRPM, MotorTorque, MotorEfficiency, GearNumber]
@@ -18,13 +14,9 @@ classdef CarDriveline < handle
         CurrentRPMLimit
     end
     methods
-        function D = CarDriveline(GearRatios,Efficiency,SprungM,UnsprungM,CG,J,FinalDriveRatio, MotorOutputCurve)
+        function D = CarDriveline(GearRatios,Efficiency,J,FinalDriveRatio,MotorOutputCurve)
             D.GearRatios = GearRatios;
             D.Efficiency = Efficiency;
-            D.Weight = SprungM + sum(UnsprungM);
-            D.EffectiveCG = CG;
-            D.SprungMass = SprungM;
-            D.UnsprungMass = UnsprungM;
             D.J = J;
             D.FinalDriveRatio = FinalDriveRatio;
             

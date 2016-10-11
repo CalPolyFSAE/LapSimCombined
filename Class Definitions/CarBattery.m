@@ -4,8 +4,6 @@ classdef CarBattery < handle
     
     properties
         Capacity
-        Weight
-        EffectiveCG
         Resistance
         NominalVoltage
         RoundtripEfficiency
@@ -14,10 +12,8 @@ classdef CarBattery < handle
     end
     
     methods
-        function B = CarBattery(Capacity,Weight,CG,Resistance,NominalVoltage,RoundtripEfficiency)
+        function B = CarBattery(Capacity,Resistance,NominalVoltage,RoundtripEfficiency)
             B.Capacity = Capacity;
-            B.Weight = Weight;
-            B.EffectiveCG = CG;
             B.Resistance = Resistance;
             B.NominalVoltage = NominalVoltage;
             B.RoundtripEfficiency = RoundtripEfficiency;

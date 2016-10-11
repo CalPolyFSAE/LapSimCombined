@@ -1,60 +1,44 @@
 function [ C ] = CarBuilderSS(tabName, rowNumber)
-%UNTITLED Summary of this function goes here
-%   Detailed explanation goes here
-
+% General Setup
 range = excelRange(excelCell(rowNumber, 'E'), excelCell(rowNumber, 'CQ'));
 setupSheetData = zeros(1,95);
 setupSheetData(5:95) = xlsread('SetupSheets.xlsx', tabName, range, 'basic');
 
-CG = setupSheetData(18:20); % x y z (in) 'R6:T6'
+CarCG = setupSheetData(18:20); % x y z (in) 'R6:T6'
 
 % Chassis Parameters
-
-WheelBase = setupSheetData(5); % in 'E6'
+Wheelbase = setupSheetData(5); % in 'E6'
 TrackWidth = setupSheetData(6:7); % Front Back (in)
-ChassisCG = setupSheetData(18:20); % x y z (in)
 DriverWeight = setupSheetData(21); % lb
 DriverCG = setupSheetData(22:24); % x y z (in)
-ChassisWeight = setupSheetData(25); % lb
-
-Chassis = CarChassis(ChassisWeight,ChassisCG,DriverWeight,DriverCG,...
-    TrackWidth,WheelBase);
+CarWeight = setupSheetData(25); % lb
 
 % Suspension Parameters
-
 SpringRate = setupSheetData(27:28); % Front Rear (lbf/in)
 ARBRate = setupSheetData(28:29); % Front Rear (in lbf/rad)
-SprungM = setupSheetData(31); % lb
-UnsprungM = setupSheetData(33:34); % Front Back (lb)
+UnsprungW = setupSheetData(33:34); % Front Back (lb)
 UnsprungH = setupSheetData(35:36); % Front Back (in)
 RollCenter = setupSheetData(37:38); % Front Back (in)
 PitchCenter = setupSheetData(47:48); % Height Distance from back (in)
 
-Suspension = CarSuspension(SpringRate,ARBRate,SprungM,UnsprungM,UnsprungH,RollCenter,PitchCenter,CG);
+Suspension = CarSuspension(SpringRate,ARBRate,UnsprungW,UnsprungH,RollCenter,PitchCenter);
 
 % Tire Parameters
-
 K = setupSheetData(50); % lbf/in
 R = setupSheetData(51); % in
 RollingResistance = setupSheetData(52);
 J = setupSheetData(53); % slugs in^2
-W = 0.0; %setupSheetData(54); % lb
 % TireModel = num2str(xlsread('SetupSheets.xlsx',setup,'BC6','basic'));
 TireModel = @Hoosier13;
 
-Tire = CarTire(TireModel,K,R,RollingResistance,W,CG,J);
+Tire = CarTire(TireModel,K,R,RollingResistance,J);
 
 % Brake Parameters
-
-Torque = setupSheetData(71:72); % Front Back (in lbf)
-SprungMass = setupSheetData(73); % lb
-UnsprungMass = setupSheetData(74:75); % Front Back (lb)
 J = setupSheetData(76); % slugs in^2
 
-Brakes = CarBrakes(Torque,SprungMass,UnsprungMass,CG,J);
+Brakes = CarBrakes(J);
 
 % Aero Parameters
-
 Drag = setupSheetData(81);
 Lift = setupSheetData(82);
 CrossArea = setupSheetData(83); % in^2
@@ -62,10 +46,7 @@ rho = setupSheetData(84);
 cop = setupSheetData(85:87);
 
 % Driveline
-
 Efficiency = setupSheetData(65);
-SprungMass = setupSheetData(66); % lb
-UnsprungMass = setupSheetData(67:68); % Front Back (lb)
 J = setupSheetData(69); % slug in^2
 
 Tmult = setupSheetData(57); % torque multiplier
@@ -106,17 +87,16 @@ switch tabName
         EfficiencyCurve = ones(length(RPMS),1)*Efficiency;
         OutputCurve = [RPMS,Torque,EfficiencyCurve];
         NMotors = 1;
-        Weight = 0; % lb
-        Motor = CarMotor(OutputCurve,NMotors,Weight,CG);
+        Motor = CarMotor(OutputCurve,NMotors);
         
         % Battery Parameters
         
-        Capacity = 5.5;%setupSheetData(89); % kWh
-        Weight = setupSheetData(90); % lb
+        Capacity = setupSheetData(89); % kWh
         NominalVoltage = 262.2; % V
         Resistance = 0.16; % ohms
+        RoundtripEfficiency = 0.9;
         
-        Battery = CarBattery(Capacity,Weight,CG,Resistance,NominalVoltage);
+        Battery = CarBattery(Capacity,Resistance,NominalVoltage,RoundtripEfficiency);
         
     case 'Combustion'
         
@@ -172,13 +152,10 @@ end
 
 % Must be run after motor is initialized because it requires the motor
 % output curve.
-Driveline = CarDriveline(GearRatios,Efficiency,SprungMass,UnsprungMass,CG,J,FinalDriveRatio,Motor.OutputCurve);
+Driveline = CarDriveline(GearRatios,Efficiency,J,FinalDriveRatio,Motor.OutputCurve);
 
 % Car Parameters
-% TabName = CarTabName(tabName);
-
-C = Car(Brakes,Driveline,Motor,Chassis,Battery,Suspension,Tire,Drag,CrossArea);
-C.LiftCoefficient = Lift;
+C = Car(Brakes,Driveline,Motor,Battery,Suspension,Tire,CrossArea,Lift,Drag,CarWeight,CarCG,DriverWeight,DriverCG,TrackWidth,Wheelbase);
 C.Rho = rho;
 C.CenterOfPressure = cop;
 C.BrakingMode = 'Hydraulic';
