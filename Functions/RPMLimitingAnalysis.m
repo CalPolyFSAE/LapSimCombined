@@ -42,6 +42,7 @@ parfor j = 1:GearRatioLength
         [~, ~, ~, TeleEndurance ] = EnduranceSimulationBasic(Car,Track,EnduranceLength);
         
         % Fill in Endurance Times & Scores
+        Tele.EnduranceLapDataStructure = TeleEndurance.LapDataStructure;
         Tele.Miscellaneous{4} = TeleEndurance.Miscellaneous{4};  
         Tele.Miscellaneous{5} = TeleEndurance.Miscellaneous{5};
         
