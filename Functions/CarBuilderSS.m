@@ -64,10 +64,9 @@ switch tabName
     
     case 'Electric'
         % Electric Motor Parameters
-        
-        PeakTorque = 240; % Nm
-        PowerLimit = 80; % kW
         Efficiency = 0.95;
+        PeakTorque = 240; % Nm
+        PowerLimit = 80 * Efficiency; % kW
         RPMLimit = 5500;
         PowerScaler = 1 / 9549; % Nm * RPM * PowerScaler = kW
         

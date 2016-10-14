@@ -279,8 +279,6 @@ classdef Telemetry < handle
             
             LapDataStitch(1,7:9) = [0 0 0];
             
-            LapDataStitch(:,8) = LapDataStitch(:,7) .* LapDataStitch(:,9) / 8.8507 / 9549; % Recalculate power because it's broken somewhere.
-            
             Tele.LapData = LapDataStitch;
             
             % Create data vectors
@@ -291,7 +289,7 @@ classdef Telemetry < handle
             TractionLimitReached = LapDataStitch(:,5);
             WheelRPM = LapDataStitch(:,6);
             MotorRPM = LapDataStitch(:,7);
-            MotorPower = LapDataStitch(:,8); %W
+            MotorPower = LapDataStitch(:,8) * 0.112985; %W
             MotorTorque = LapDataStitch(:,9); %in-lb
             BrakingTorque = LapDataStitch(:,10); %in-lb
             Time = LapDataStitch(:,11);
