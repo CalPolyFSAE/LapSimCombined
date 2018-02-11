@@ -1,0 +1,9 @@
+These equations of based of curve fits of Hoosier R25B 13x7 tire data.
+ * Fit is based on tire normal loads from 0-350lbs and is only an
+   extrapolation beyond that.
+ * Optimum Slip Angles/Ratios were used to find the ouput force and are
+   returned. Returned Slip Angle may be inaccurate at normal loads < 50 lbs.
+ * An Inclination Angle of 0 was also used.
+ * Source Data:
+       Longitudinal: https://docs.google.com/spreadsheets/d/1GGr0C9T5nTWj2hsEe3SVV6OE34LaEc_uqaYXwbKgMGM/edit?usp=sharing
+       Lateral: https://docs.google.com/spreadsheets/d/1Gx2vhS-jnTdLmaWeMJVq3nm5NF3w7Ltedh8BYTxcZX4/edit?usp=sharing
