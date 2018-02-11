@@ -2,7 +2,8 @@ function [ C ] = CarBuilderSS(tabName, rowNumber)
 % General Setup
 range = excelRange(excelCell(rowNumber, 'E'), excelCell(rowNumber, 'CQ'));
 setupSheetData = zeros(1,95);
-setupSheetData(5:95) = xlsread('SetupSheets.xlsx', tabName, range, 'basic');
+pullsheet = xlsread('SetupSheets.xlsx', tabName, range, 'basic');
+setupSheetData(5:95) = pullsheet;
 
 CarCG = setupSheetData(18:20); % x y z (in) 'R6:T6'
 
@@ -103,8 +104,9 @@ switch tabName
 %         redline = setupSheetData(94);    % Not used at the moment
 %         engine = 'CalPolySLO';
         engineselection = excelCell(rowNumber, 'CV');
-        [num,txt,raw] = xlsread('SetupSheets.xlsx', tabName,engineselection);
-        engine = txt{1,1};
+%         [num,txt,raw] = xlsread('SetupSheets.xlsx', tabName,engineselection);
+%         engine = txt{1,1};
+        engine = 'CalPolySLO';
         RPMS_raw = xlsread('torquecurves.xlsx',engine,'C:C');
         T_raw = xlsread('torquecurves.xlsx',engine,'E:E'); %in-lbf
         RPMS = (min(RPMS_raw):max(RPMS_raw))';
@@ -131,7 +133,7 @@ switch tabName
         RPMincrement = (0:max(RPMS)/length(fuel_map_raw):length(RPMS)-2)'; %RPM's array with fuel step increment
         E = abs(spline(RPMincrement,fuel_map_raw,RPMS)); %fuel_map
         
-        Battery = CarBattery(Capacity,Weight,CG, 0, 0);
+        Battery = CarBattery(Capacity,Weight,CarCG, 0);
         
         %Engine Parameters again
 %         P = 14.7; %[Psi] at WOT
@@ -141,7 +143,7 @@ switch tabName
         NMotors = 1;
         Weight = 0; %lbf
         
-        Motor = CarMotor(OutputCurve,NMotors,Weight,CG);
+        Motor = CarMotor(OutputCurve,NMotors);
         
         % Driveline Parameters
         

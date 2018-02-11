@@ -292,8 +292,8 @@ classdef Telemetry < handle
             MotorPower = LapDataStitch(:,8) * 0.112985; %W
             MotorTorque = LapDataStitch(:,9); %in-lb
             BrakingTorque = LapDataStitch(:,10); %in-lb
-            Time = LapDataStitch(:,11);
-            
+            dT = LapDataStitch(:,11);
+            Time = dtToT(dT);
             B = CarObject.Battery;
             BatteryCurrent = -1 * (-B.NominalVoltage + sqrt(MotorPower * -4 * B.Resistance + B.NominalVoltage^2))./...
                 (2 * B.Resistance);
@@ -312,10 +312,11 @@ classdef Telemetry < handle
                 'MotorPower', MotorPower,...
                 'MotorTorque', MotorTorque,...
                 'BrakingTorque', BrakingTorque,...
-                'Time', Time,...
+                'dT', dT,...
                 'BatteryCurrent', BatteryCurrent,...
                 'BatteryVoltage', BatteryVoltage,...
-                'BatteryPower', BatteryPower);
+                'BatteryPower', BatteryPower,...
+                'Time', Time);
             
             
         end
@@ -330,7 +331,7 @@ classdef Telemetry < handle
             
             disp(['Total Lap Time (s)   : ', num2str(TotalTime)]);
             
-            Energy = Tele.LapDataStructure.BatteryPower .* Tele.LapDataStructure.Time;
+            Energy = Tele.LapDataStructure.BatteryPower .* Tele.LapDataStructure.dT;
             
             TotalEnergy = sum(Energy)/3600/1000;
             
@@ -465,13 +466,13 @@ classdef Telemetry < handle
             end
             
             EF = (TminEnd/TotalTime)*(CO2min/CO2kg);
-            EScore = 100*((EFmin/EF)-1)/((EFmin/EFmax)-1);
-            if EScore < 0 || EndScore == 0
-                EScore = 0;
-            elseif EScore > 100
-                EScore = 100;
-            end
-            
+%             EScore = 100*((EFmin/EF)-1)/((EFmin/EFmax)-1);
+%             if EScore < 0 || EndScore == 0
+%                 EScore = 0;
+%             elseif EScore > 100
+%                 EScore = 100;
+%             end
+            EScore = 0;
             disp(['Efficiency Score       : ', num2str(EScore)])
             
             TotalScore = AccScore + AutoXScore + SkidPadScore + EScore + EndScore;
